@@ -133,19 +133,65 @@ func (r *UserRepo) DeleteUser(id int) error {
 }
 
 func (r *UserRepo) UpdateUser(user model.User) error {
-	query := `
-	UPDATE users 
-	SET name = $1, surname = $2, patronymic = $3 
-	WHERE id = $4`
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString("UPDATE users SET ")
 
-	result, err := r.db.Pool.Exec(context.Background(), query, user.Name, user.Surname, user.Patronymic, user.ID)
+	// Список для значений
+	args := []interface{}{}
+	argNumber := 1
+
+	if user.Name != "" {
+		queryBuilder.WriteString(fmt.Sprintf("name = $%d,", argNumber))
+		args = append(args, user.Name)
+		argNumber++
+	}
+
+	if user.Surname != "" {
+		queryBuilder.WriteString(fmt.Sprintf("surname = $%d,", argNumber))
+		args = append(args, user.Surname)
+		argNumber++
+	}
+
+	if user.Patronymic != "" {
+		queryBuilder.WriteString(fmt.Sprintf("patronymic = $%d,", argNumber))
+		args = append(args, user.Patronymic)
+		argNumber++
+	}
+
+	if user.Age != 0 {
+		queryBuilder.WriteString(fmt.Sprintf("age = $%d,", argNumber))
+		args = append(args, user.Age)
+		argNumber++
+	}
+
+	if user.Gender != "" {
+		queryBuilder.WriteString(fmt.Sprintf("gender = $%d,", argNumber))
+		args = append(args, user.Gender)
+		argNumber++
+	}
+
+	if user.Nationality != "" {
+		queryBuilder.WriteString(fmt.Sprintf("nationality = $%d,", argNumber))
+		args = append(args, user.Nationality)
+		argNumber++
+	}
+
+	query := queryBuilder.String()
+	query = query[:len(query)-1]
+
+	query += fmt.Sprintf(" WHERE id = $%d", argNumber)
+	args = append(args, user.ID)
+
+	result, err := r.db.Pool.Exec(context.Background(), query, args...)
 	if err != nil {
 		return err
 	}
+
 	// Проверка количества обновленных строк
 	rowsAffected := result.RowsAffected()
 	if rowsAffected == 0 {
 		return fmt.Errorf("User with ID %d not found", user.ID)
 	}
+
 	return nil
 }
