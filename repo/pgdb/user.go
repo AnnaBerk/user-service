@@ -3,6 +3,7 @@ package pgdb
 import (
 	"context"
 	"fmt"
+	"strings"
 	"user-service/api_clients/model"
 	"user-service/pkg/psql"
 )
@@ -72,13 +73,50 @@ func (r *UserRepo) GetUsers(page, size int, filter string) ([]model.User, error)
 }
 
 func (r *UserRepo) AddUser(user model.User) (int, error) {
-	query := `
-	INSERT INTO users (name, surname, patronymic)
-	VALUES ($1, $2, $3)
-	RETURNING id`
+	fields := []string{}
+	values := []interface{}{}
+	placeholders := []string{}
+
+	// Здесь мы добавляем обязательные поля
+	fields = append(fields, "name", "surname")
+	values = append(values, user.Name, user.Surname)
+
+	// Динамическое добавление полей
+	if user.Patronymic != "" {
+		fields = append(fields, "patronymic")
+		values = append(values, user.Patronymic)
+	}
+
+	if user.Age != 0 {
+		fields = append(fields, "age")
+		values = append(values, user.Age)
+	}
+
+	if user.Gender != "" {
+		fields = append(fields, "gender")
+		values = append(values, user.Gender)
+	}
+
+	if user.Nationality != "" {
+		fields = append(fields, "nationality")
+		values = append(values, user.Nationality)
+	}
+
+	// Генерация плейсхолдеров для SQL-запроса
+	for i := range values {
+		placeholders = append(placeholders, fmt.Sprintf("$%d", i+1))
+	}
+
+	query := fmt.Sprintf(`
+        INSERT INTO users (%s)
+        VALUES (%s)
+        RETURNING id`,
+		strings.Join(fields, ", "),
+		strings.Join(placeholders, ", "),
+	)
 
 	var id int
-	err := r.db.Pool.QueryRow(context.Background(), query, user.Name, user.Surname, user.Patronymic).Scan(&id)
+	err := r.db.Pool.QueryRow(context.Background(), query, values...).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
