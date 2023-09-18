@@ -42,20 +42,21 @@ func NewFIOService(kafkaService *kafka.Service, userRepo repo.UserRepo, rdb *red
 
 // ProcessMessages читает очередь кафки, валидирует сообщение и в случае успеха записывает результат в бд
 func (f *FIOService) ProcessMessages() {
-	message := FIO{
-		Name:       "Petr",
-		Surname:    "Ushakov",
-		Patronymic: "Vasilevich",
-	}
-	messageBytes, err := json.Marshal(message)
-	if err != nil {
-		log.Error("Failed to marshal the message:", err)
-		return
-	}
+// Запись сообщения в топик для тестирования, в реальном сервисе ее быть не должно
+	// message := FIO{
+	// 	Name:       "Petr",
+	// 	Surname:    "Ushakov",
+	// 	Patronymic: "Vasilevich",
+	// }
+	// messageBytes, err := json.Marshal(message)
+	// if err != nil {
+	// 	log.Error("Failed to marshal the message:", err)
+	// 	return
+	// }
 
-	if err := f.kafkaService.PublishToTopic("FIO", messageBytes); err != nil {
-		log.Error("Failed to publish the message to Kafka:", err)
-	}
+	// if err := f.kafkaService.PublishToTopic("FIO", messageBytes); err != nil {
+	// 	log.Error("Failed to publish the message to Kafka:", err)
+	// }
 	for {
 		select {
 		case <-f.stopCh:
